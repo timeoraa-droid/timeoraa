@@ -24,29 +24,25 @@ jobs:
           cache: npm
 
       - name: Install server dependencies
-        working-directory: watch-store/server
+        working-directory: server
         run: npm ci
 
       - name: Install client dependencies
-        working-directory: watch-store/client
+        working-directory: client
         run: npm ci
 
       - name: Run server tests
-        working-directory: watch-store/server
-        run: node test/runTests.js
+        working-directory: server
+        run: npm test && node test/runTests.js
         env:
           MONGO_URI: mongodb://localhost:27017/timeora_watches_test
           JWT_SECRET: test-secret-key-min-32-chars
           NODE_ENV: test
 
-      - name: Lint server
-        working-directory: watch-store/server
-        run: npx eslint . --ext .js 2>/dev/null || echo "Lint skipped (no config)"
+      - name: Lint frontend
+        working-directory: client
+        run: npm run lint
 
       - name: Build frontend
-        working-directory: watch-store/client
+        working-directory: client
         run: npm run build
-
-      - name: Typecheck frontend
-        working-directory: watch-store/client
-        run: npx tsc --noEmit 2>/dev/null || echo "Typecheck skipped (no tsconfig)"

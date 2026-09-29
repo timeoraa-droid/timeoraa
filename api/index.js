@@ -1,5 +1,3 @@
-// Vercel Serverless Entry Point — wraps Express app for serverless execution
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../server/.env') });
+const { createVoiceServer } = require('../server/server');
 
-module.exports = require('../server/server.js');
+module.exports = createVoiceServer();

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd client && npm install && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "client/dist",
-  "installCommand": "npm install && cd server && npm install",
+  "installCommand": "npm ci && npm ci --prefix client && npm ci --prefix server",
   "rewrites": [
     {
       "source": "/api/(.*)",

@@ -3,8 +3,9 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { BRAND_CONFIG } from '../config/brandConfig';
 import { Package, ArrowRight } from 'lucide-react';
+import { API_BASE } from '../config/api';
 
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
+const API_URL = API_BASE;
 
 const Orders = () => {
   const { user, token } = useAuth();

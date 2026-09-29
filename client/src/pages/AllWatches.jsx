@@ -5,6 +5,7 @@ import { useProducts } from '../context/ProductContext';
 import ProductCard from '../components/ProductCard';
 import QuickViewModal from '../components/QuickViewModal';
 import { BRAND_CONFIG } from '../config/brandConfig';
+import CatalogNotice from '../components/CatalogNotice';
 
 const AllWatches = ({ 
   initialGender = 'All', 
@@ -12,7 +13,7 @@ const AllWatches = ({
   pageTitle = 'All Timepieces',
   pageDescription = 'Explore our complete portfolio of precision-crafted horological masterpieces.' 
 }) => {
-  const { products } = useProducts();
+  const { products, loading, error, refreshProducts } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedGender, setSelectedGender] = useState(initialGender);
   const [maxPrice, setMaxPrice] = useState(10000);
@@ -33,7 +34,7 @@ const AllWatches = ({
         return false;
       }
       // Price filter
-      const effectivePrice = product.discountPrice || product.price;
+      const effectivePrice = product.discountPrice && product.discountPrice < product.price ? product.discountPrice : product.price;
       if (effectivePrice > maxPrice) {
         return false;
       }
@@ -48,8 +49,8 @@ const AllWatches = ({
       }
       return true;
     }).sort((a, b) => {
-      const priceA = a.discountPrice || a.price;
-      const priceB = b.discountPrice || b.price;
+      const priceA = a.discountPrice && a.discountPrice < a.price ? a.discountPrice : a.price;
+      const priceB = b.discountPrice && b.discountPrice < b.price ? b.discountPrice : b.price;
 
       if (sortBy === 'price-low') return priceA - priceB;
       if (sortBy === 'price-high') return priceB - priceA;
@@ -58,7 +59,7 @@ const AllWatches = ({
       // Default: featured / rating
       return b.rating - a.rating;
     });
-  }, [selectedCategory, selectedGender, maxPrice, sortBy, searchQuery]);
+  }, [products, selectedCategory, selectedGender, maxPrice, sortBy, searchQuery]);
 
   const resetFilters = () => {
     setSelectedCategory('All');
@@ -272,7 +273,9 @@ const AllWatches = ({
 
           {/* Right Product Grid */}
           <div className="lg:col-span-3">
-            {filteredProducts.length === 0 ? (
+            {products.length === 0 || error ? (
+              <CatalogNotice loading={loading} error={error} onRetry={refreshProducts} />
+            ) : filteredProducts.length === 0 ? (
               <div className="bg-[#121217] border border-[#22222d] rounded-2xl p-12 text-center space-y-4">
                 <div className="w-16 h-16 rounded-full bg-[#181822] border border-[#2a2a35] mx-auto flex items-center justify-center text-[#2dd4bf]">
                   <Search size={28} />

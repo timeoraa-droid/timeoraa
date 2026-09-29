@@ -1,7 +1,5 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 import { 
   Plus, 
   Edit3, 
@@ -32,6 +30,7 @@ import { useProducts } from '../context/ProductContext';
 import { useAuth } from '../context/AuthContext';
 import { BRAND_CONFIG } from '../config/brandConfig';
 import AdminVoicePanel from '../components/AdminVoicePanel';
+import { API_BASE } from '../config/api';
 
 const PRESET_WATCH_IMAGES = [
   "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1200",
@@ -76,7 +75,7 @@ const Admin = () => {
     price: '',
     discountPrice: '',
     description: '',
-    stock: 10,
+    stock: '',
     category: 'Chronograph',
     gender: 'Men',
     images: [],
@@ -137,7 +136,7 @@ const Admin = () => {
       const uploadData = new FormData();
       filesToProcess.forEach(f => uploadData.append('images', f));
 
-      const res = await axios.post(`${API_BASE}/api/upload/multiple`, uploadData, {
+      const res = await axios.post(`${API_BASE}/upload/multiple`, uploadData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -193,7 +192,7 @@ const Admin = () => {
     try {
       const uploadData = new FormData();
       uploadData.append('image', file);
-      const res = await axios.post(`${API_BASE}/api/upload`, uploadData, {
+      const res = await axios.post(`${API_BASE}/upload`, uploadData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data?.success && res.data?.filePath) {
@@ -281,7 +280,7 @@ const Admin = () => {
     try {
       const uploadData = new FormData();
       uploadData.append('video', file);
-      const res = await axios.post(`${API_BASE}/api/upload/video`, uploadData, {
+      const res = await axios.post(`${API_BASE}/upload/video`, uploadData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       if (res.data?.success && res.data?.filePath) {
@@ -333,7 +332,7 @@ const Admin = () => {
       price: '',
       discountPrice: '',
       description: '',
-      stock: 10,
+      stock: '',
       category: 'Chronograph',
       gender: 'Men',
       images: [],
@@ -354,7 +353,7 @@ const Admin = () => {
 
     const existingImages = Array.isArray(product.images) && product.images.length > 0
       ? product.images
-      : (product.image ? [product.image] : [PRESET_WATCH_IMAGES[0]]);
+      : (product.image ? [product.image] : []);
 
     setFormData({
       name: product.name,
@@ -372,7 +371,7 @@ const Admin = () => {
   };
 
   // Submit Create or Edit Product
-  const handleSubmitProduct = (e) => {
+  const handleSubmitProduct = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.price || !formData.description) return;
     
@@ -395,13 +394,19 @@ const Admin = () => {
       tagline: formData.tagline || 'Engineered with Precision'
     };
 
-    if (modalMode === 'create') {
-      addProduct(payload);
-    } else {
-      updateProduct(editingProductId, payload);
+    setUploadingMedia(true);
+    try {
+      if (modalMode === 'create') {
+        await addProduct(payload);
+      } else {
+        await updateProduct(editingProductId, payload);
+      }
+      setIsProductModalOpen(false);
+    } catch (saveError) {
+      setMediaError(saveError.message || 'Product could not be saved.');
+    } finally {
+      setUploadingMedia(false);
     }
-
-    setIsProductModalOpen(false);
   };
 
   // Open Offer modal
@@ -444,11 +449,15 @@ const Admin = () => {
   };
 
   // Toggle Out of Stock
-  const handleToggleStock = (product) => {
+  const handleToggleStock = async (product) => {
     if (product.stock <= 0) {
-      markAvailable(product.id, 10);
-    } else {
-      markOutOfStock(product.id);
+      handleOpenEditModal(product);
+      return;
+    }
+    try {
+      await markOutOfStock(product.id);
+    } catch (stockError) {
+      setMediaError(stockError.message || 'Stock could not be updated.');
     }
   };
 
@@ -769,11 +778,11 @@ const Admin = () => {
                                   ? 'bg-emerald-950/50 hover:bg-emerald-900 border-emerald-800 text-emerald-300'
                                   : 'bg-red-950/40 hover:bg-red-900 border-red-800 text-red-300'
                               }`}
-                              title={isOutOfStock ? "Mark as Available" : "Mark as Out of Stock"}
+                              title={isOutOfStock ? "Set the verified stock quantity" : "Mark as Out of Stock"}
                             >
                               {isOutOfStock ? <PackageCheck size={14} /> : <PackageX size={14} />}
                               <span className="hidden sm:inline">
-                                {isOutOfStock ? "Restock" : "Out of Stock"}
+                                {isOutOfStock ? "Set stock" : "Out of Stock"}
                               </span>
                             </button>
 

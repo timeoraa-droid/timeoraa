@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Eye, ShoppingBag, Star, Check } from 'lucide-react';
+import { Heart, Eye, ShoppingBag, Star, Check, Watch } from 'lucide-react';
 import { BRAND_CONFIG } from '../config/brandConfig';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -12,9 +12,11 @@ const ProductCard = ({ product, onQuickView }) => {
   const { toggleWishlist, isInWishlist } = useWishlist();
 
   const isFavorited = isInWishlist(product.id);
-
-  const isOutOfStock = Number(product.stock) <= 0;
+  const stockCount = Number(product.stock);
+  const availabilityKnown = product.stock !== undefined && product.stock !== null && Number.isFinite(stockCount) && stockCount >= 0;
+  const isOutOfStock = !availabilityKnown || stockCount <= 0;
   const isOnOffer = Boolean(product.discountPrice && product.discountPrice < product.price);
+  const effectivePrice = isOnOffer ? product.discountPrice : product.price;
 
   const discountPercent = isOnOffer 
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100) 
@@ -43,7 +45,7 @@ const ProductCard = ({ product, onQuickView }) => {
     }
   };
 
-  const mainImage = product.images?.[0] || 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1200';
+  const mainImage = product.images?.[0] || product.image;
   const hoverImage = product.images?.[1] || mainImage;
 
   return (
@@ -56,7 +58,7 @@ const ProductCard = ({ product, onQuickView }) => {
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
         {isOutOfStock && (
           <span className="bg-red-600 text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-sm shadow-md">
-            Out of Stock
+            {availabilityKnown ? 'Out of Stock' : 'Availability Unconfirmed'}
           </span>
         )}
         {isOnOffer && !isOutOfStock && (
@@ -92,12 +94,19 @@ const ProductCard = ({ product, onQuickView }) => {
 
       {/* Watch Image Showcase */}
       <Link to={`/product/${product.id}`} className="block relative aspect-[4/5] bg-gradient-to-b from-[#181822] to-[#0d0d12] overflow-hidden">
-        <img
-          src={isHovered ? hoverImage : mainImage}
-          alt={product.name}
-          className="w-full h-full object-cover object-center transition-all duration-700 transform group-hover:scale-105 filter brightness-95 group-hover:brightness-105"
-          loading="lazy"
-        />
+        {mainImage ? (
+          <img
+            src={isHovered ? hoverImage : mainImage}
+            alt={product.name}
+            className="w-full h-full object-cover object-center transition-all duration-700 transform group-hover:scale-105 filter brightness-95 group-hover:brightness-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#171b17] text-center text-gray-400">
+            <Watch size={34} aria-hidden="true" className="text-[#b8a16a]" />
+            <span className="text-[10px] uppercase tracking-[0.2em]">Product image coming soon</span>
+          </div>
+        )}
 
         {/* Quick View Button on Hover */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
@@ -147,15 +156,17 @@ const ProductCard = ({ product, onQuickView }) => {
           <div className="flex flex-col">
             <div className="flex items-baseline space-x-2">
               <span className="text-lg font-bold text-white tracking-tight">
-                {BRAND_CONFIG.currency}{(product.discountPrice || product.price).toLocaleString()}
+                {BRAND_CONFIG.currency}{Number(effectivePrice).toLocaleString()}
               </span>
-              {product.discountPrice && (
+              {isOnOffer && (
                 <span className="text-xs text-gray-500 line-through">
                   {BRAND_CONFIG.currency}{product.price.toLocaleString()}
                 </span>
               )}
             </div>
-            {isOutOfStock ? (
+            {!availabilityKnown ? (
+              <span className="text-[10px] text-amber-300 font-medium">Availability unconfirmed</span>
+            ) : isOutOfStock ? (
               <span className="text-[10px] text-red-400 font-medium">Out of Stock</span>
             ) : isOnOffer ? (
               <span className="text-[10px] text-amber-300 font-medium">Available • On Offer</span>
@@ -175,8 +186,8 @@ const ProductCard = ({ product, onQuickView }) => {
                 ? 'bg-emerald-600 text-white shadow-lg'
                 : 'bg-[#1e1e28] hover:bg-[#2dd4bf] text-gray-200 hover:text-black border border-[#2a2a38] hover:border-[#2dd4bf]'
             }`}
-            title={isOutOfStock ? "Out of Stock" : "Add to Shopping Bag"}
-            aria-label={isOutOfStock ? "Out of Stock" : "Add to cart"}
+            title={!availabilityKnown ? 'Availability unconfirmed' : isOutOfStock ? 'Out of Stock' : 'Add to Shopping Bag'}
+            aria-label={!availabilityKnown ? 'Availability unconfirmed' : isOutOfStock ? 'Out of Stock' : 'Add to cart'}
           >
             {addedAnimation ? <Check size={18} /> : <ShoppingBag size={18} />}
           </button>

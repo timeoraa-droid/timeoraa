@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Headphones, RefreshCw, Save } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_BASE } from '../config/api';
 const languageLabels = { en: 'English', hi: 'Hindi', gu: 'Gujarati' };
 
 const AdminVoicePanel = () => {
@@ -102,7 +101,14 @@ const AdminVoicePanel = () => {
         </div>
       </div>
 
-      {(!configured || !phoneConfigured) && <p className="mt-4 border-l-2 border-amber-400 px-3 py-2 text-xs text-amber-100">{!configured ? 'Website calls need Twilio and OpenAI credentials, a public HTTPS URL, and a Twilio voice application.' : 'Incoming phone calls are not enabled until a real Twilio business number is configured.'}</p>}
+      {!configured && <p className="mt-4 border-l-2 border-amber-400 px-3 py-2 text-xs text-amber-100">Website calls need Twilio and OpenAI credentials, a public HTTPS webhook URL, a public WSS stream server, and a Twilio Voice application. Vercel deployment settings and function duration must support the WebSocket session.</p>}
+      {configured && (
+        <p className={`mt-4 border-l-2 px-3 py-2 text-xs ${phoneConfigured ? 'border-emerald-400 text-emerald-100' : 'border-amber-400 text-amber-100'}`}>
+          {phoneConfigured
+            ? 'Twilio confirms inbound voice capability and the configured webhook on +91 8469965711.'
+            : 'Phone answering is not enabled: Twilio must provision +91 8469965711 for voice and point its POST voice URL to this TIMEORA webhook.'}
+        </p>
+      )}
       {notice && <p role="status" className="mt-3 text-xs text-gray-200">{notice}</p>}
 
       <form onSubmit={saveConfig} className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]">

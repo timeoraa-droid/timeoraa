@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
@@ -11,6 +12,7 @@ const CallLog = require('./models/CallLog');
 const { bridgeCall } = require('./services/voiceBridge');
 const { isVoiceConfigured } = require('./routes/voiceRoutes');
 const WebSocket = require('ws');
+const twilioVoice = require('./providers/twilioVoice');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
@@ -35,6 +37,25 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
 }));
+
+let databaseConnection;
+const ensureDatabaseConnection = async () => {
+  if (mongoose.connection.readyState === 1) return;
+  if (!databaseConnection) {
+    databaseConnection = connectDB().finally(() => { databaseConnection = null; });
+  }
+  await databaseConnection;
+};
+
+app.use(async (req, res, next) => {
+  if (!process.env.VERCEL) return next();
+  try {
+    await ensureDatabaseConnection();
+    next();
+  } catch {
+    res.status(503).json({ success: false, message: 'Database service is temporarily unavailable.' });
+  }
+});
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -105,22 +126,17 @@ const PORT = process.env.PORT || 5000;
 
 let server;
 
-const startServer = async () => {
-  try {
-    await connectDB();
-  } catch (dbError) {
-    console.warn('[TIMEORA] MongoDB connection failed. Server starting in offline mode with fallback data.');
-    console.warn(`[TIMEORA] DB Error: ${dbError.message}`);
-  }
-
-  server = http.createServer(app);
+const createVoiceServer = () => {
+  const voiceServer = http.createServer(app);
   const voiceSockets = new WebSocket.Server({ noServer: true, maxPayload: 1024 * 1024 });
-  server.on('upgrade', async (request, socket, head) => {
+  voiceServer.on('upgrade', async (request, socket, head) => {
     const requestUrl = new URL(request.url, 'http://localhost');
     if (requestUrl.pathname !== '/api/voice/stream') return socket.destroy();
     const callSid = requestUrl.searchParams.get('callSid') || '';
-    if (!isVoiceConfigured() || !/^CA[A-Za-z0-9]{10,40}$/.test(callSid)) return socket.destroy();
+    if (!isVoiceConfigured() || !twilioVoice.validateWebsocketRequest(request)
+      || !/^CA[A-Za-z0-9]{10,40}$/.test(callSid)) return socket.destroy();
     try {
+      await ensureDatabaseConnection();
       const call = await CallLog.findOne({ providerCallId: callSid, status: 'in-progress' }).select('_id').lean();
       if (!call) return socket.destroy();
       voiceSockets.handleUpgrade(request, socket, head, (websocket) => {
@@ -131,6 +147,18 @@ const startServer = async () => {
     }
   });
   voiceSockets.on('connection', bridgeCall);
+  return voiceServer;
+};
+
+const startServer = async () => {
+  try {
+    await connectDB();
+  } catch (dbError) {
+    console.warn('[TIMEORA] MongoDB connection failed. Server starting in offline mode with fallback data.');
+    console.warn(`[TIMEORA] DB Error: ${dbError.message}`);
+  }
+
+  server = createVoiceServer();
   server.listen(PORT, () => {
     console.log('\n=================================================');
     console.log('  TIMEORA Horlogerie Backend Server Running');
@@ -145,4 +173,4 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { app, startServer, server };
+module.exports = { app, startServer, createVoiceServer, server };

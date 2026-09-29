@@ -8,50 +8,24 @@ import {
   Sparkles, 
   Compass, 
   ChevronRight, 
-  Star, 
-  CheckCircle2,
   Clock,
-  Gem
+  Gem,
+  Phone,
+  Headphones
 } from 'lucide-react';
 import { BRAND_CONFIG } from '../config/brandConfig';
 import { useProducts } from '../context/ProductContext';
 import ProductCard from '../components/ProductCard';
 import QuickViewModal from '../components/QuickViewModal';
+import CatalogNotice from '../components/CatalogNotice';
 
 const Home = () => {
-  const { products } = useProducts();
+  const { products, loading, error, refreshProducts } = useProducts();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
   const featuredWatches = products.filter(w => w.featured).slice(0, 4);
   const newArrivals = products.filter(w => w.newArrival).slice(0, 4);
   const bestSellers = products.filter(w => w.bestSeller).slice(0, 4);
-
-  const customerReviews = [
-    {
-      id: 1,
-      name: "Marcus Vance",
-      title: "Collector & Horologist, London",
-      quote: "The Chrono Royal Noir is astonishing in person. The finishing on the ceramic bezel and the smoothness of the sweeping second hand rivals my pieces that cost five times as much.",
-      rating: 5,
-      watch: "TIMEORA Chrono Royal Noir"
-    },
-    {
-      id: 2,
-      name: "Sophia Delacroix",
-      title: "Art Director, Paris",
-      quote: "The Aurelia Diamond Elegance is a dream on the wrist. The natural mother-of-pearl dial catches every ray of Parisian sunlight. True understated luxury.",
-      rating: 5,
-      watch: "TIMEORA Aurelia Diamond Elegance"
-    },
-    {
-      id: 3,
-      name: "Julian Thorne",
-      title: "Architect, Zurich",
-      quote: "The Lumina Sapphire Perpetual is pure structural poetry. Milled sapphire creates a three-dimensional view of the escapement that is endlessly mesmerizing.",
-      rating: 5,
-      watch: "TIMEORA Lumina Sapphire Perpetual"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-[#0b0b0d] text-gray-100">
@@ -61,9 +35,10 @@ const Home = () => {
         {/* Cinematic Background Image with dark luxury gradient overlays */}
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=2000&auto=format&fit=crop"
-            alt="TIMEORA Luxury Watch Craftsmanship"
-            className="w-full h-full object-cover object-center filter brightness-[0.32] contrast-125 transform scale-105 animate-pulse duration-[8000ms]"
+            src="https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=85&w=2200&auto=format&fit=crop"
+            alt="Luxury wristwatch in a TIMEORA-inspired editorial setting"
+            fetchPriority="high"
+            className="w-full h-full object-cover object-center filter brightness-[0.42] contrast-110 transform scale-[1.02]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b0b0d] via-[#0b0b0d]/60 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0b0b0d]/90 via-transparent to-[#0b0b0d]/90" />
@@ -143,15 +118,11 @@ const Home = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredWatches.map(product => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              onQuickView={setQuickViewProduct} 
-            />
-          ))}
-        </div>
+        {featuredWatches.length ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredWatches.map(product => <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />)}
+          </div>
+        ) : <CatalogNotice loading={loading} error={error} onRetry={refreshProducts} />}
       </section>
 
       {/* 3. GENDER COLLECTIONS SHOWCASE (MEN & WOMEN) */}
@@ -237,15 +208,11 @@ const Home = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {newArrivals.map(product => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              onQuickView={setQuickViewProduct} 
-            />
-          ))}
-        </div>
+        {newArrivals.length ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {newArrivals.map(product => <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />)}
+          </div>
+        ) : <CatalogNotice loading={loading} error={error} onRetry={refreshProducts} />}
       </section>
 
       {/* 5. BRAND HERITAGE / WHY CHOOSE TIMEORA */}
@@ -323,55 +290,23 @@ const Home = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {bestSellers.map(product => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              onQuickView={setQuickViewProduct} 
-            />
-          ))}
-        </div>
+        {bestSellers.length ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {bestSellers.map(product => <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />)}
+          </div>
+        ) : <CatalogNotice loading={loading} error={error} onRetry={refreshProducts} />}
       </section>
 
-      {/* 7. COLLECTOR REVIEWS */}
-      <section className="py-20 bg-[#0d0d12] border-t border-[#181822]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs font-semibold text-[#2dd4bf] uppercase tracking-[0.3em] block mb-2">
-              Patron Testimonials
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-['Cinzel'] font-bold text-white">
-              Words From Our Collectors
-            </h2>
+      <section className="border-y border-white/10 bg-[#101411] py-16 sm:py-20" aria-labelledby="customer-support-heading">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:px-8">
+          <div>
+            <span className="mb-3 block text-xs font-semibold uppercase tracking-[0.25em] text-[#c4ad74]">Customer Support</span>
+            <h2 id="customer-support-heading" className="font-['Cinzel'] text-2xl font-semibold text-white sm:text-3xl">A real person is one call away.</h2>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-gray-400">Speak with TIMEORA about a product, your order, or choosing a timepiece. The number below opens your phone dialer; AI answering has not been enabled on this line.</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {customerReviews.map(review => (
-              <div 
-                key={review.id}
-                className="bg-[#13131a] border border-[#22222d] rounded-2xl p-8 flex flex-col justify-between relative shadow-lg"
-              >
-                <div>
-                  <div className="flex items-center space-x-1 text-[#2dd4bf] mb-4">
-                    {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} size={15} fill="currentColor" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-300 italic leading-relaxed mb-6 font-light">
-                    "{review.quote}"
-                  </p>
-                </div>
-
-                <div className="pt-4 border-t border-[#1e1e28]">
-                  <h4 className="font-semibold text-white text-sm font-['Cinzel']">{review.name}</h4>
-                  <p className="text-[11px] text-gray-400 mt-0.5">{review.title}</p>
-                  <span className="text-[10px] text-[#2dd4bf] block mt-1 uppercase tracking-wider font-mono">
-                    Owner of {review.watch}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+            <a href="tel:+918469965711" className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#2dd4bf] px-5 text-sm font-semibold text-[#10110e] transition hover:bg-[#5eead4]"><Phone size={17} />+91 8469965711</a>
+            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('timeora:open-voice-support'))} className="inline-flex min-h-12 items-center justify-center gap-2 border border-white/25 px-5 text-sm font-semibold text-white transition hover:border-[#2dd4bf] hover:text-[#5eead4]"><Headphones size={17} />Call TIMEORA AI</button>
           </div>
         </div>
       </section>

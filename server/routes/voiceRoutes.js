@@ -36,7 +36,7 @@ const getConfig = async () => {
 
 router.get('/config', async (req, res) => {
   try {
-    res.json({ success: true, configured: isVoiceConfigured(), phoneConfigured: twilioVoice.isPhoneConfigured(), ...await getConfig() });
+    res.json({ success: true, configured: isVoiceConfigured(), phoneConfigured: await twilioVoice.isPhoneConfigured(), ...await getConfig() });
   } catch {
     res.status(500).json({ success: false, message: 'Voice settings unavailable' });
   }
@@ -61,8 +61,8 @@ router.post('/twiml', async (req, res) => {
 
   const callSid = String(req.body.CallSid || '');
   if (!/^CA[A-Za-z0-9]{10,40}$/.test(callSid)) return res.status(400).send('Invalid call reference');
-  const source = String(req.body.From || '').startsWith('client:') ? 'website' : 'phone';
-  if (source === 'phone' && !twilioVoice.isConfiguredBusinessNumber(req.body.To)) {
+  const source = req.body.Source === 'website' || String(req.body.From || '').startsWith('client:') ? 'website' : 'phone';
+  if (source === 'phone' && !await twilioVoice.isConfiguredBusinessNumber(req.body.To)) {
     return res.status(503).send('TIMEORA phone support is not configured for this number');
   }
   await CallLog.findOneAndUpdate({ providerCallId: callSid }, {

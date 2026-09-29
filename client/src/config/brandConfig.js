@@ -11,7 +11,8 @@ export const BRAND_CONFIG = {
   currencyCode: "USD",
   contact: {
     email: "concierge@timeora.com",
-    phone: "+1 (800) 846-3672",
+    phone: "+91 8469965711",
+    phoneE164: "+918469965711",
     address: "740 Fifth Avenue, Suite 1800, New York, NY 10019",
     hours: "Mon - Fri: 9:00 AM - 8:00 PM EST"
   },

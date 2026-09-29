@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, MessageSquare, Calendar } from 'lucide-react';
 import { BRAND_CONFIG } from '../config/brandConfig';
+import { API_BASE } from '../config/api';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,14 @@ const Contact = () => {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [phoneAiEnabled, setPhoneAiEnabled] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/voice/config`)
+      .then(response => response.json())
+      .then(config => setPhoneAiEnabled(config.phoneConfigured === true))
+      .catch(() => setPhoneAiEnabled(false));
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -65,7 +74,10 @@ const Contact = () => {
                   <Phone size={18} className="text-[#2dd4bf] flex-shrink-0 mt-0.5" />
                   <div>
                     <span className="font-semibold text-white block">Direct Concierge</span>
-                    <span>{BRAND_CONFIG.contact.phone}</span>
+                    <a href={`tel:${BRAND_CONFIG.contact.phoneE164}`} className="underline decoration-white/20 underline-offset-4 hover:text-[#2dd4bf]">{BRAND_CONFIG.contact.phone}</a>
+                    <span className="mt-1 block text-[11px] text-gray-500">
+                      {phoneAiEnabled ? 'AI phone answering is configured for this line.' : 'Tapping this number dials your phone. AI answering is not enabled on this line.'}
+                    </span>
                   </div>
                 </div>
 

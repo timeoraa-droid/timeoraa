@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { validateTwilioRequest, router } = require('../routes/voiceRoutes');
 const { isAffirmative } = require('../services/voiceBridge');
-const { isConfiguredBusinessNumber } = require('../providers/twilioVoice');
+const { isPhoneConfigured, matchesBusinessNumber, validateWebsocketRequest } = require('../providers/twilioVoice');
 
 test('Twilio webhook validation accepts a valid provider signature only', () => {
   const previous = {
@@ -33,6 +33,31 @@ test('Twilio webhook validation accepts a valid provider signature only', () => 
     else process.env.TWILIO_AUTH_TOKEN = previous.token;
     if (previous.baseUrl === undefined) delete process.env.TWILIO_PUBLIC_BASE_URL;
     else process.env.TWILIO_PUBLIC_BASE_URL = previous.baseUrl;
+  }
+});
+
+test('Twilio media WebSocket upgrade requires a valid provider signature', () => {
+  const previousToken = process.env.TWILIO_AUTH_TOKEN;
+  const previousStreamBase = process.env.VOICE_STREAM_BASE_URL;
+  process.env.TWILIO_AUTH_TOKEN = 'test-twilio-auth-token';
+  process.env.VOICE_STREAM_BASE_URL = 'wss://voice.example.test';
+  const requestPath = '/api/voice/stream?callSid=CA12345678901234567890';
+  const signature = twilio.getExpectedTwilioSignature(
+    process.env.TWILIO_AUTH_TOKEN,
+    `https://voice.example.test${requestPath}`,
+    {},
+  );
+  const request = { url: requestPath, headers: { 'x-twilio-signature': signature } };
+
+  try {
+    assert.equal(validateWebsocketRequest(request), true);
+    request.headers['x-twilio-signature'] = 'invalid-signature';
+    assert.equal(validateWebsocketRequest(request), false);
+  } finally {
+    if (previousToken === undefined) delete process.env.TWILIO_AUTH_TOKEN;
+    else process.env.TWILIO_AUTH_TOKEN = previousToken;
+    if (previousStreamBase === undefined) delete process.env.VOICE_STREAM_BASE_URL;
+    else process.env.VOICE_STREAM_BASE_URL = previousStreamBase;
   }
 });
 
@@ -76,37 +101,25 @@ test('spoken confirmation accepts explicit English, Hindi, and Gujarati affirmat
   assert.equal(isAffirmative('no'), false);
 });
 
-test('phone readiness matches the configured business number', () => {
-  const previous = {
-    accountSid: process.env.TWILIO_ACCOUNT_SID,
-    keySid: process.env.TWILIO_API_KEY_SID,
-    keySecret: process.env.TWILIO_API_KEY_SECRET,
-    voiceAppSid: process.env.TWILIO_VOICE_APP_SID,
-    authToken: process.env.TWILIO_AUTH_TOKEN,
-    publicUrl: process.env.TWILIO_PUBLIC_BASE_URL,
-    phone: process.env.TWILIO_PHONE_NUMBER,
-    openAi: process.env.OPENAI_API_KEY,
-  };
-  Object.assign(process.env, {
-    TWILIO_ACCOUNT_SID: 'AC123', TWILIO_API_KEY_SID: 'SK123', TWILIO_API_KEY_SECRET: 'secret',
-    TWILIO_VOICE_APP_SID: 'AP123', TWILIO_AUTH_TOKEN: 'auth',
-    TWILIO_PUBLIC_BASE_URL: 'https://voice.example.test', TWILIO_PHONE_NUMBER: '+14155552671',
-    OPENAI_API_KEY: 'test-key',
-  });
+test('only the exact TIMEORA India support number qualifies', () => {
+  assert.equal(matchesBusinessNumber('+91 8469965711'), true);
+  assert.equal(matchesBusinessNumber('+1 (415) 555-2671'), false);
+});
+
+test('phone AI stays unavailable without a provider resource SID', async () => {
+  const keys = [
+    'TWILIO_ACCOUNT_SID', 'TWILIO_API_KEY_SID', 'TWILIO_API_KEY_SECRET', 'TWILIO_VOICE_APP_SID',
+    'TWILIO_AUTH_TOKEN', 'TWILIO_PUBLIC_BASE_URL', 'VOICE_STREAM_BASE_URL', 'TWILIO_PHONE_NUMBER',
+    'TWILIO_PHONE_NUMBER_SID', 'OPENAI_API_KEY',
+  ];
+  const previous = keys.map(key => [key, process.env[key]]);
+  for (const key of keys) delete process.env[key];
   try {
-    assert.equal(isConfiguredBusinessNumber('+1 (415) 555-2671'), true);
-    assert.equal(isConfiguredBusinessNumber('+14155552672'), false);
-    process.env.TWILIO_PHONE_NUMBER = 'not-a-phone-number';
-    assert.equal(isConfiguredBusinessNumber('+14155552671'), false);
+    assert.equal(await isPhoneConfigured(), false);
   } finally {
-    const restore = (key, value) => value === undefined ? delete process.env[key] : (process.env[key] = value);
-    restore('TWILIO_ACCOUNT_SID', previous.accountSid);
-    restore('TWILIO_API_KEY_SID', previous.keySid);
-    restore('TWILIO_API_KEY_SECRET', previous.keySecret);
-    restore('TWILIO_VOICE_APP_SID', previous.voiceAppSid);
-    restore('TWILIO_AUTH_TOKEN', previous.authToken);
-    restore('TWILIO_PUBLIC_BASE_URL', previous.publicUrl);
-    restore('TWILIO_PHONE_NUMBER', previous.phone);
-    restore('OPENAI_API_KEY', previous.openAi);
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
 });

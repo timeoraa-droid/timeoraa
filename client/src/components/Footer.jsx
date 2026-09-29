@@ -89,7 +89,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3 text-gray-300">
                 <Phone size={16} className="text-[#2dd4bf] flex-shrink-0" />
-                <span>{BRAND_CONFIG.contact.phone}</span>
+                <a href={`tel:${BRAND_CONFIG.contact.phoneE164}`} className="hover:text-[#2dd4bf]">{BRAND_CONFIG.contact.phone}</a>
               </div>
               <div className="flex items-center space-x-3 text-gray-300">
                 <Mail size={16} className="text-[#2dd4bf] flex-shrink-0" />

@@ -103,13 +103,18 @@ const bridgeCall = (twilioSocket) => {
     sendJson(openAiSocket, {
       type: 'session.update',
       session: {
+        type: 'realtime',
+        model: process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime',
         instructions: `${buildInstructions()} Supported languages: ${(config.supportedLanguages || ['en', 'hi', 'gu']).join(', ')}. At the start, call set_call_language with the detected caller language. Begin with this greeting: ${config.greeting || 'Welcome to TIMEORA. I am your AI assistant. How may I help you today?'}`,
-        modalities: ['audio', 'text'],
-        input_audio_format: 'g711_ulaw',
-        output_audio_format: 'g711_ulaw',
-        input_audio_transcription: { model: 'whisper-1' },
-        voice: 'marin',
-        turn_detection: { type: 'server_vad' },
+        output_modalities: ['audio', 'text'],
+        audio: {
+          input: {
+            format: { type: 'audio/pcmu' },
+            transcription: { model: 'whisper-1' },
+            turn_detection: { type: 'server_vad' },
+          },
+          output: { format: { type: 'audio/pcmu' }, voice: 'marin' },
+        },
         tools: toolDefinitions,
         tool_choice: 'auto',
       },
@@ -127,7 +132,10 @@ const bridgeCall = (twilioSocket) => {
         callSid = message.start?.callSid || callSid;
         callStates.set(callSid, { consented: false, confirmed: false, awaitingConsent: false, awaitingConfirmation: false, orderDraft: null });
         callStarted = true;
-        await CallLog.findOneAndUpdate({ providerCallId: callSid }, { $setOnInsert: { provider: 'twilio', source: message.start?.customParameters?.source === 'website' ? 'website' : 'phone', startedAt: new Date() } }, { upsert: true, new: true });
+        await CallLog.findOneAndUpdate({ providerCallId: callSid }, {
+          $set: { status: 'in-progress', outcome: 'answered' },
+          $setOnInsert: { provider: 'twilio', source: message.start?.customParameters?.source === 'website' ? 'website' : 'phone', startedAt: new Date() },
+        }, { upsert: true, new: true });
         if (sessionReady) sendJson(openAiSocket, { type: 'response.create', response: { instructions: 'Use the configured TIMEORA greeting. Identify yourself as an AI assistant, then ask how you can help. Detect the caller language and reply in it.' } });
       } else if (message.event === 'media' && openAiSocket.readyState === WebSocket.OPEN) {
         sendJson(openAiSocket, { type: 'input_audio_buffer.append', audio: message.media.payload });
@@ -148,7 +156,7 @@ const bridgeCall = (twilioSocket) => {
         sessionReady = true;
         if (callStarted) sendJson(openAiSocket, { type: 'response.create', response: { instructions: 'Use the configured TIMEORA greeting. Identify yourself as an AI assistant, then ask how you can help. Detect the caller language and reply in it.' } });
       }
-      if (event.type === 'response.audio.delta' && streamSid) {
+      if (event.type === 'response.output_audio.delta' && streamSid) {
         sendJson(twilioSocket, { event: 'media', streamSid, media: { payload: event.delta } });
       } else if (event.type === 'conversation.item.input_audio_transcription.completed') {
         const state = callStates.get(callSid);
@@ -166,15 +174,21 @@ const bridgeCall = (twilioSocket) => {
           state.awaitingConfirmation = false;
           state.confirmed = false;
         }
-      } else if (event.type === 'response.function_call_arguments.done') {
-        let output;
-        try {
-          output = await handleToolCall(event.name, JSON.parse(event.arguments || '{}'), callSid);
-        } catch (error) {
-          output = { error: error.message || 'Unable to complete request' };
+      } else if (event.type === 'response.done') {
+        const functionCalls = (event.response?.output || []).filter(item => item.type === 'function_call');
+        for (const functionCall of functionCalls) {
+          let output;
+          try {
+            output = await handleToolCall(functionCall.name, JSON.parse(functionCall.arguments || '{}'), callSid);
+          } catch (error) {
+            output = { error: error.message || 'Unable to complete request' };
+          }
+          sendJson(openAiSocket, {
+            type: 'conversation.item.create',
+            item: { type: 'function_call_output', call_id: functionCall.call_id, output: JSON.stringify(output) },
+          });
         }
-        sendJson(openAiSocket, { type: 'conversation.item.create', item: { type: 'function_call_output', call_id: event.call_id, output: JSON.stringify(output) } });
-        sendJson(openAiSocket, { type: 'response.create' });
+        if (functionCalls.length) sendJson(openAiSocket, { type: 'response.create' });
       } else if (event.type === 'error') {
         console.error('[TIMEORA Voice] Realtime provider returned an error');
       }

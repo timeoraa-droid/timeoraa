@@ -12,13 +12,35 @@ const validateObjectId = (id) => {
   try { return new mongoose.Types.ObjectId(id); } catch { return null; }
 };
 
+const resolveCategory = async (value) => {
+  if (mongoose.Types.ObjectId.isValid(value)) {
+    const byId = await Category.findById(value);
+    if (byId) return byId;
+  }
+
+  const name = String(value || '').trim().slice(0, 80);
+  if (!name) return null;
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let category = await Category.findOne({ name: new RegExp(`^${escapedName}$`, 'i') });
+  if (!category) {
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    try {
+      category = await Category.create({ name, slug, isActive: true });
+    } catch (error) {
+      if (error.code !== 11000) throw error;
+      category = await Category.findOne({ slug });
+    }
+  }
+  return category;
+};
+
 router.get('/', async (req, res) => {
   try {
     const { category, search, sort } = req.query;
     let query = { isActive: true };
 
     if (category && category !== 'All') {
-      query.category = category;
+      query.categoryName = { $regex: `^${String(category).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' };
     }
 
     if (search) {
@@ -114,16 +136,13 @@ router.post('/', protect, admin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'SKU already exists' });
     }
 
-    let categoryId = category;
-    if (mongoose.Types.ObjectId.isValid(category)) {
-      const cat = await Category.findById(category);
-      if (cat) categoryId = category;
-    }
+    const categoryRecord = await resolveCategory(category);
+    if (!categoryRecord) return res.status(400).json({ success: false, message: 'Please provide a valid category.' });
 
     const productData = {
       name, price: Number(price),
       discountPrice: discountPrice ? Number(discountPrice) : null,
-      category: categoryId, categoryName: typeof category === 'string' ? category : '',
+      category: categoryRecord._id, categoryName: categoryRecord.name,
       gender, description,
       stock: Number(stock) >= 0 ? Number(stock) : 10,
       lowStockThreshold: 5,
@@ -155,6 +174,13 @@ router.put('/:id', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = { ...req.body };
+
+    if (updates.category !== undefined) {
+      const categoryRecord = await resolveCategory(updates.category);
+      if (!categoryRecord) return res.status(400).json({ success: false, message: 'Please provide a valid category.' });
+      updates.category = categoryRecord._id;
+      updates.categoryName = categoryRecord.name;
+    }
 
     if (updates.price) updates.price = Number(updates.price);
     if (updates.discountPrice !== undefined) updates.discountPrice = updates.discountPrice ? Number(updates.discountPrice) : null;

@@ -16,26 +16,32 @@ import {
   Share2,
   Play,
   Film,
-  Video
+  Video,
+  Watch
 } from 'lucide-react';
-import { WATCH_PRODUCTS } from '../data/watches';
 import { BRAND_CONFIG } from '../config/brandConfig';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useProducts } from '../context/ProductContext';
 import ProductCard from '../components/ProductCard';
+import CatalogNotice from '../components/CatalogNotice';
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const { products } = useProducts();
+  const { products, loading, error, refreshProducts } = useProducts();
 
-  const product = products.find(p => String(p.id) === String(id)) || products[0] || WATCH_PRODUCTS[0];
+  const product = products.find(p => String(p.id) === String(id));
 
-  const isOutOfStock = (product?.stock <= 0 || product?.status === 'out-of-stock');
+  const stockCount = Number(product?.stock);
+  const availabilityKnown = product?.stock !== undefined && product?.stock !== null && Number.isFinite(stockCount) && stockCount >= 0;
+  const isOutOfStock = !availabilityKnown || stockCount <= 0 || product?.status === 'out-of-stock';
   const isOnOffer = Boolean(product?.onOffer || (product?.discountPrice && product.discountPrice < product.price) || product?.offerPercent);
+  const effectivePrice = Number.isFinite(Number(product?.effectivePrice))
+    ? Number(product.effectivePrice)
+    : isOnOffer ? Number(product.discountPrice) : Number(product?.price);
 
   const [activeMedia, setActiveMedia] = useState({ type: 'image', index: 0 });
   const [selectedColor, setSelectedColor] = useState(product?.colors?.[0] || 'Standard');
@@ -71,11 +77,27 @@ const ProductDetails = () => {
   // Related watches from same category or gender
   const relatedWatches = products.filter(p => p.id !== product?.id && (p.category === product?.category || p.gender === product?.gender)).slice(0, 4);
 
-  const images = (Array.isArray(product.images) && product.images.length > 0)
+  const images = (Array.isArray(product?.images) && product.images.length > 0)
     ? product.images
-    : [product.image || 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=1200'];
+    : product?.image ? [product.image] : [];
 
-  const hasVideo = Boolean(product.video);
+  const hasVideo = Boolean(product?.video);
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-[#0b0b0d] px-4 pb-24 pt-32 text-gray-100 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <CatalogNotice
+            loading={loading}
+            error={error}
+            onRetry={refreshProducts}
+            title="Timepiece not found in the live catalog"
+            description="This reference may have been removed or is not currently listed. TIMEORA only displays product details and availability confirmed by the store catalog."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0b0b0d] pt-28 pb-24 text-gray-100">
@@ -113,12 +135,17 @@ const ProductDetails = () => {
                     className="w-full h-full object-contain"
                   />
                 </div>
-              ) : (
+              ) : images.length ? (
                 <img
                   src={images[activeMedia.index] || images[0]}
                   alt={product.name}
                   className="w-full h-full object-contain filter drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)] transition-all duration-500 transform group-hover:scale-105"
                 />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#171b17] text-center text-gray-400">
+                  <Watch size={40} className="text-[#2dd4bf]" aria-hidden="true" />
+                  <span className="text-xs uppercase tracking-[0.2em]">Product image coming soon</span>
+                </div>
               )}
             </div>
 
@@ -206,7 +233,7 @@ const ProductDetails = () => {
                   <span className="text-xs text-gray-400 uppercase tracking-widest block mb-1">Maison Price</span>
                   <div className="flex items-baseline space-x-3">
                     <span className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-                      {BRAND_CONFIG.currency}{(product.discountPrice || product.price).toLocaleString()}
+                      {BRAND_CONFIG.currency}{effectivePrice.toLocaleString()}
                     </span>
                     {product.discountPrice && product.discountPrice < product.price && (
                       <span className="text-sm text-gray-500 line-through">
@@ -217,7 +244,12 @@ const ProductDetails = () => {
                 </div>
 
                 <div className="text-right">
-                  {isOutOfStock ? (
+                  {!availabilityKnown ? (
+                    <>
+                      <span className="text-amber-300 text-xs font-bold uppercase tracking-wider">Availability unconfirmed</span>
+                      <span className="text-[11px] text-gray-400 block mt-1">Please contact TIMEORA before ordering.</span>
+                    </>
+                  ) : isOutOfStock ? (
                     <div>
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-950/80 text-rose-400 border border-rose-800/80">
                         Out of Stock
@@ -229,7 +261,7 @@ const ProductDetails = () => {
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-950/80 text-amber-400 border border-amber-800/80">
                         On Offer {product.offerPercent ? `(-${product.offerPercent}%)` : 'Special'}
                       </span>
-                      <span className="text-[11px] text-emerald-400 block mt-1">Available • {product.stock} pieces in vault</span>
+                      <span className="text-[11px] text-emerald-400 block mt-1">Available • {stockCount} units in live stock</span>
                     </div>
                   ) : (
                     <div>
@@ -237,7 +269,7 @@ const ProductDetails = () => {
                         <Check size={12} className="mr-1" />
                         Available
                       </span>
-                      <span className="text-[11px] text-gray-400 block mt-1">{product.stock} In Stock • Immediate delivery</span>
+                      <span className="text-[11px] text-gray-400 block mt-1">{stockCount} units in live stock • Delivery timing confirmed at checkout</span>
                     </div>
                   )}
                 </div>

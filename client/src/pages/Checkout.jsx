@@ -4,9 +4,10 @@ import { ShieldCheck, Lock, CreditCard, Landmark, Truck, Check, ArrowRight } fro
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { BRAND_CONFIG } from '../config/brandConfig';
+import { API_BASE } from '../config/api';
 import axios from 'axios';
 
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`;
+const API_URL = API_BASE;
 
 const Checkout = () => {
   const { cartItems, subtotal, clearCart, lastCheckoutOrder, setLastCheckoutOrder } = useCart();
