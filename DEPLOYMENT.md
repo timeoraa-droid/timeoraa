@@ -19,11 +19,11 @@ To run separately, use `npm run server` and `npm run client` in two terminals, b
 
 ## Vercel Frontend and HTTP API
 
-Set the Vercel project root to `watch-store` and deploy `main`. The repository's `vercel.json` builds `client/` and rewrites `/api/*` to `api/index.js`. That entry exports the HTTP/WebSocket server and connects MongoDB for serverless HTTP invocations.
+Set the Vercel project root to `watch-store` and deploy `main`. The repository's `vercel.json` builds `client/` and rewrites `/api/*` to `api/index.js`. That entry exports the Express request handler and connects MongoDB before API requests. Set `MONGODB_URI` (or `MONGO_URI`) to the Atlas connection string and allow network access from the deployment environment. The API returns HTTP 503 when MongoDB is not configured or cannot be reached; it does not report an empty/fake catalog.
 
 Configure these server-side Vercel environment variables for standard HTTP features: `MONGODB_URI`, a strong `JWT_SECRET`, `CLIENT_URL` set to the deployed site origin, and any payment/email settings the store uses. `VITE_API_URL` may be left unset to use same-origin `/api`; set it to an HTTPS API origin only when the backend is hosted separately. Vite variables are public; never put secrets in a `VITE_` variable.
 
-Vercel's current WebSocket feature is Beta and requires Fluid Compute. Connections are subject to Function duration limits and account/project availability. For reliable voice calls of normal call length, use a persistent Node host for the API and media WebSocket server. If using Vercel WebSockets, enable the required feature/Fluid Compute and test the maximum expected call duration before launch. The app does not claim voice readiness just because the Vercel site is deployed.
+The Vercel HTTP function exports the Express app. Run `server/server.js` on a persistent Node host for voice/media WebSocket upgrades; point `VOICE_STREAM_BASE_URL` at that host. The website can continue using the Vercel HTTP API for standard requests. The app does not claim voice readiness just because the Vercel site is deployed.
 
 Vercel's filesystem is not durable for product uploads. Product records can store externally hosted image URLs. Use durable object storage before relying on local upload files in production.
 

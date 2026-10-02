@@ -31,7 +31,7 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      const res = await register(name, email, password);
+      const res = await register(name, email, password, confirmPassword);
       if (res.success) {
         navigate('/account', { replace: true });
       } else {

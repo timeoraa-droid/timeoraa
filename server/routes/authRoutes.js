@@ -3,8 +3,10 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { logError } = require('../utils/logger');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'timeora_super_secret_jwt_horology_key_2024', {
@@ -14,20 +16,29 @@ const generateToken = (id) => {
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    const cleanEmail = (email || '').toLowerCase().trim();
+    const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+    const name = typeof body.name === 'string' ? body.name.trim()
+      : typeof body.fullName === 'string' ? body.fullName.trim() : '';
+    const cleanEmail = typeof body.email === 'string' ? body.email.toLowerCase().trim() : '';
+    const { password, confirmPassword } = body;
 
-    if (!name || !cleanEmail || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+    if (!name || !cleanEmail || typeof password !== 'string' || typeof confirmPassword !== 'string') {
+      return res.status(400).json({ success: false, message: 'Please provide your full name, email, password, and password confirmation.' });
+    }
+    if (name.length > 120 || !/^\S+@\S+\.\S+$/.test(cleanEmail) || cleanEmail.length > 254) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid name and email address.' });
     }
 
-    if (password.length < 6) {
+    if (password.length < 6 || password.length > 128) {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+    if (password !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'Passwords do not match.' });
     }
 
     const userExists = await User.findOne({ email: cleanEmail });
     if (userExists) {
-      return res.status(400).json({ success: false, message: 'An account with this email already exists' });
+      return res.status(409).json({ success: false, message: 'An account with this email already exists' });
     }
 
     const user = await User.create({ name, email: cleanEmail, password, role: 'user' });
@@ -41,9 +52,21 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: 'An account with this email already exists' });
+      return res.status(409).json({ success: false, message: 'An account with this email already exists' });
     }
-    res.status(500).json({ success: false, message: 'Server error' });
+    if (error instanceof mongoose.Error.ValidationError) {
+      return res.status(400).json({
+        success: false,
+        message: Object.values(error.errors).map((validationError) => validationError.message).join(', '),
+      });
+    }
+    if (mongoose.connection.readyState !== 1
+      || ['MongooseError', 'MongoNetworkError', 'MongoServerSelectionError', 'MongoNotConnectedError'].includes(error.name)) {
+      logError('Registration database operation failed', { errorName: error.name, errorCode: error.code });
+      return res.status(503).json({ success: false, message: 'Registration is temporarily unavailable. Please try again later.' });
+    }
+    logError('Registration failed', { errorName: error.name, errorCode: error.code });
+    return res.status(500).json({ success: false, message: 'Unable to complete registration right now. Please try again later.' });
   }
 });
 

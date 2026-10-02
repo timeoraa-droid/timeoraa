@@ -48,12 +48,12 @@ const ensureDatabaseConnection = async () => {
 };
 
 app.use(async (req, res, next) => {
-  if (!process.env.VERCEL) return next();
+  if (!req.path.startsWith('/api/')) return next();
   try {
     await ensureDatabaseConnection();
     next();
   } catch {
-    res.status(503).json({ success: false, message: 'Database service is temporarily unavailable.' });
+    res.status(503).json({ success: false, message: 'Database service is temporarily unavailable. Please try again later.' });
   }
 });
 
@@ -155,8 +155,8 @@ const startServer = async () => {
   try {
     await connectDB();
   } catch (dbError) {
-    console.warn('[TIMEORA] MongoDB connection failed. Server starting in offline mode with fallback data.');
-    console.warn(`[TIMEORA] DB Error: ${dbError.message}`);
+    console.warn('[TIMEORA] MongoDB connection failed. Server starting without database access.');
+    console.warn(`[TIMEORA] Database error type: ${dbError.name || 'Error'}`);
   }
 
   server = createVoiceServer();

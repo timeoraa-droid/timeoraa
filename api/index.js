@@ -1,3 +1,3 @@
-const { createVoiceServer } = require('../server/server');
+const { app } = require('../server/server');
 
-module.exports = createVoiceServer();
+module.exports = app;

@@ -5,7 +5,10 @@ const notFound = (req, res, next) => {
 };
 
 const errorHandler = (err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  const errorStatus = Number(err.status || err.statusCode);
+  const statusCode = Number.isInteger(errorStatus) && errorStatus >= 400 && errorStatus < 600
+    ? errorStatus
+    : (res.statusCode === 200 ? 500 : res.statusCode);
   const isAuthError = err.message && (
     err.message.includes('Not authorized') ||
     err.message.includes('token') ||

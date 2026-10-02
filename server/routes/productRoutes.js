@@ -43,12 +43,14 @@ router.get('/', async (req, res) => {
       query.categoryName = { $regex: `^${String(category).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' };
     }
 
-    if (search) {
+    const searchTerm = typeof search === 'string' ? search.trim().slice(0, 100) : '';
+    if (searchTerm) {
+      const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { movement: { $regex: search, $options: 'i' } },
+        { name: { $regex: escapedSearch, $options: 'i' } },
+        { sku: { $regex: escapedSearch, $options: 'i' } },
+        { description: { $regex: escapedSearch, $options: 'i' } },
+        { movement: { $regex: escapedSearch, $options: 'i' } },
       ];
     }
 
@@ -57,12 +59,10 @@ router.get('/', async (req, res) => {
     if (sort === 'price-high') sortOpt = { price: -1 };
     if (sort === 'popularity') sortOpt = { reviewsCount: -1 };
 
-    let products;
-    if (mongoose.connection.readyState === 1) {
-      products = await Product.find(query).sort(sortOpt).lean();
-    } else {
-      return res.json({ success: true, products: [], source: 'no-connection' });
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ success: false, message: 'Product catalog is temporarily unavailable. Please try again later.' });
     }
+    const products = await Product.find(query).sort(sortOpt).lean();
 
     const results = products.map(p => ({
       ...p,
@@ -82,10 +82,10 @@ router.get('/', async (req, res) => {
 
 router.get('/categories', async (req, res) => {
   try {
-    let categories = [];
-    if (mongoose.connection.readyState === 1) {
-      categories = await Category.find({ isActive: true }).sort({ sortOrder: 1 }).lean();
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ success: false, message: 'Product catalog is temporarily unavailable. Please try again later.' });
     }
+    const categories = await Category.find({ isActive: true }).sort({ sortOrder: 1 }).lean();
     res.json({ success: true, categories });
   } catch (error) {
     logError(error);
@@ -98,12 +98,13 @@ router.get('/:id', async (req, res) => {
     let product;
     const id = req.params.id;
 
-    if (mongoose.connection.readyState === 1) {
-      if (id.match(/^[0-9a-fA-F]{24}$/)) {
-        product = await Product.findById(id).lean();
-      } else {
-        product = await Product.findOne({ sku: id }).lean();
-      }
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ success: false, message: 'Product catalog is temporarily unavailable. Please try again later.' });
+    }
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      product = await Product.findById(id).lean();
+    } else {
+      product = await Product.findOne({ sku: id }).lean();
     }
 
     if (!product) {

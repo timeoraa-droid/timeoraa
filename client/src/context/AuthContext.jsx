@@ -68,10 +68,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, rawEmail, password) => {
+  const register = async (name, rawEmail, password, confirmPassword) => {
     const email = rawEmail.toLowerCase().trim();
     try {
-      const res = await axios.post(`${API_URL}/register`, { name, email, password });
+      const res = await axios.post(`${API_URL}/register`, { name, email, password, confirmPassword });
       const userData = { ...res.data.user, email: res.data.user.email.toLowerCase().trim() };
       setUser(userData);
       setToken(res.data.token);
