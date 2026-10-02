@@ -117,6 +117,14 @@ The voice feature is optional. It uses Twilio Voice for browser/phone audio and 
 
 8. Sign in with an admin account and open `/admin` to view call history, outcomes, handoff requests, voice-created orders, configure greeting/languages, and see provider-confirmed phone readiness. Call records do not contain recordings or full transcripts. Admin endpoints require the existing admin JWT.
 
+## AI Shopping Chatbot Setup
+
+The floating TIMEORA chat is available across the storefront in English, Hindi, and Gujarati. It uses the server-side `OPENAI_API_KEY` (model configurable with `OPENAI_CHAT_MODEL`, default `gpt-4o-mini`); never expose either value through a `VITE_` frontend variable. Without the key, AI chat returns a clear setup/support message rather than simulated AI replies.
+
+Watch recommendations are queried from active, in-stock MongoDB products using the customer's budget, gender, color, and style preferences. Order lookup requires the existing customer sign-in and searches only orders owned by that authenticated account; order IDs and obvious email/phone values are excluded or redacted from the AI conversation. Only a minimal order status/items/tracking summary is returned. Shipping prices/threshold are read from the store's shipping configuration. The assistant only states published return/exchange facts and does not promise delivery dates or invent policy terms. For the existing storefront's general support line, the chat's call action uses the configured number in `client/src/config/brandConfig.js`.
+
+Use the server environment variable setup above, then run `npm run dev --prefix server` and `npm run dev --prefix client` from `watch-store`. An authenticated customer order is required to test successful tracking; use the actual order ID created by the existing checkout.
+
 ### Admin sign-in and first-time setup
 
 The **User** choice opens user sign-in. On that screen, choose **Create an account** to register; new registrations always receive the customer role. The **Admin** choice accepts an admin login ID or the admin account email.

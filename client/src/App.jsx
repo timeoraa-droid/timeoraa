@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import VoiceCallButton from './components/VoiceCallButton';
+import Chatbot from './components/Chatbot';
 import SearchOverlay from './components/SearchOverlay';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
@@ -71,6 +72,7 @@ function App() {
           <WishlistProvider>
             <Router>
               <VoiceCallButton />
+              <Chatbot />
               <Routes>
                 <Route path="/" element={<SplashScreen />} />
                 <Route path="/splash" element={<SplashScreen />} />

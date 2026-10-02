@@ -117,6 +117,7 @@ app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 app.use('/api/settings', require('./routes/settingRoutes'));
+app.use('/api/chatbot', require('./routes/chatbotRoutes'));
 app.use('/api/voice', require('./routes/voiceRoutes').router);
 
 app.use(notFound);

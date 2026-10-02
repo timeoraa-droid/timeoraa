@@ -1,0 +1,429 @@
+.timeora-chatbot {
+  --chat-accent: #2dd4bf;
+  --chat-panel: #111815;
+  --chat-card: #17211e;
+  --chat-border: rgba(255, 255, 255, .1);
+  position: fixed;
+  z-index: 45;
+  right: 20px;
+  bottom: 88px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.timeora-chat-window {
+  position: absolute;
+  right: 0;
+  bottom: 64px;
+  display: flex;
+  width: min(400px, calc(100vw - 28px));
+  height: min(640px, calc(100dvh - 190px));
+  min-height: 390px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(45, 212, 191, .24);
+  border-radius: 18px;
+  background: var(--chat-panel);
+  color: #f3f4f6;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .65);
+}
+
+.timeora-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  border-bottom: 1px solid var(--chat-border);
+  background: linear-gradient(110deg, #18221f, #101613);
+}
+
+.timeora-chat-avatar,
+.timeora-message-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--chat-accent);
+  background: rgba(45, 212, 191, .12);
+}
+
+.timeora-chat-avatar {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(45, 212, 191, .2);
+  border-radius: 50%;
+}
+
+.timeora-chat-header h2 {
+  margin: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeora-chat-header p {
+  margin: 4px 0 0;
+  color: #9ca3af;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.timeora-chat-online {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, .6);
+}
+
+.timeora-language-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: #d1d5db;
+}
+
+.timeora-language-select select {
+  width: 62px;
+  appearance: none;
+  border: 1px solid var(--chat-border);
+  border-radius: 7px;
+  background: #101512;
+  padding: 7px 18px 7px 7px;
+  color: inherit;
+  font-size: 11px;
+}
+
+.timeora-language-select svg {
+  position: absolute;
+  right: 5px;
+  pointer-events: none;
+}
+
+.timeora-chat-close,
+.timeora-chat-launcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  cursor: pointer;
+}
+
+.timeora-chat-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  color: #cbd5d1;
+}
+
+.timeora-chat-close:hover {
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+}
+
+.timeora-chat-messages {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 12px;
+  scroll-behavior: smooth;
+}
+
+.timeora-message-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-bottom: 13px;
+}
+
+.timeora-message-row.is-user {
+  justify-content: flex-end;
+}
+
+.timeora-message-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+
+.timeora-message {
+  max-width: 88%;
+  border: 1px solid var(--chat-border);
+  border-radius: 4px 13px 13px;
+  background: var(--chat-card);
+  padding: 10px 11px;
+  color: #e5e7eb;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.timeora-message.user-message {
+  border-color: rgba(45, 212, 191, .3);
+  border-radius: 13px 4px 13px 13px;
+  background: rgba(45, 212, 191, .13);
+  color: #effffc;
+}
+
+.timeora-message p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.timeora-chat-action,
+.timeora-order-summary a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+  border: 1px solid rgba(45, 212, 191, .35);
+  border-radius: 7px;
+  background: rgba(45, 212, 191, .1);
+  padding: 7px 9px;
+  color: var(--chat-accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.timeora-order-summary {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  color: #cbd5d1;
+  font-size: 11px;
+}
+
+.timeora-order-summary strong {
+  color: var(--chat-accent);
+}
+
+.timeora-product-results {
+  display: grid;
+  gap: 8px;
+  width: min(320px, 72vw);
+  margin-top: 9px;
+}
+
+.timeora-product {
+  display: flex;
+  min-height: 114px;
+  overflow: hidden;
+  border: 1px solid var(--chat-border);
+  border-radius: 10px;
+  background: #101512;
+}
+
+.timeora-product > img {
+  width: 88px;
+  min-height: 114px;
+  object-fit: cover;
+  background: #202923;
+}
+
+.timeora-product-info {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 9px;
+}
+
+.timeora-product-info strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.timeora-product-price {
+  color: var(--chat-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.timeora-product-info del {
+  color: #8b938f;
+  font-size: 10px;
+}
+
+.timeora-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #86efac;
+  font-size: 9px;
+}
+
+.timeora-product-info p {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #9ca3af;
+  font-size: 9px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.timeora-product-link {
+  margin-top: auto;
+  color: #99f6e4;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.timeora-typing {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 4px;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.timeora-chat-quick-replies {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 10px 12px;
+  border-top: 1px solid var(--chat-border);
+  scrollbar-width: none;
+}
+
+.timeora-chat-quick-replies::-webkit-scrollbar {
+  display: none;
+}
+
+.timeora-chat-quick-replies button {
+  flex: none;
+  border: 1px solid rgba(45, 212, 191, .28);
+  border-radius: 999px;
+  background: rgba(45, 212, 191, .06);
+  padding: 7px 9px;
+  color: #b8f7ed;
+  cursor: pointer;
+  font-size: 10px;
+  transition: background .15s ease;
+}
+
+.timeora-chat-quick-replies button:hover:not(:disabled) {
+  background: rgba(45, 212, 191, .16);
+}
+
+.timeora-chat-quick-replies button:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.timeora-chat-compose {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 7px;
+}
+
+.timeora-chat-compose input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--chat-border);
+  border-radius: 9px;
+  outline: none;
+  background: #0c100e;
+  padding: 11px;
+  color: #fff;
+  font-size: 11px;
+}
+
+.timeora-chat-compose input:focus {
+  border-color: rgba(45, 212, 191, .65);
+}
+
+.timeora-chat-compose button {
+  display: grid;
+  width: 40px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: var(--chat-accent);
+  color: #07120f;
+  cursor: pointer;
+}
+
+.timeora-chat-compose button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.timeora-chat-footnote {
+  margin: 0;
+  padding: 0 12px 9px;
+  color: #737d78;
+  font-size: 9px;
+  text-align: center;
+}
+
+.timeora-chat-footnote a {
+  color: #99f6e4;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.timeora-chat-launcher {
+  min-height: 50px;
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 999px;
+  background: var(--chat-accent);
+  padding: 0 17px;
+  color: #07120f;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, .45), 0 0 25px rgba(45, 212, 191, .18);
+  font-size: 12px;
+  font-weight: 700;
+  transition: transform .18s ease, background .18s ease;
+}
+
+.timeora-chat-launcher:hover {
+  transform: translateY(-2px);
+  background: #5eead4;
+}
+
+.timeora-chat-launcher.is-open {
+  width: 48px;
+  min-height: 48px;
+  padding: 0;
+}
+
+@media (max-width: 480px) {
+  .timeora-chatbot {
+    right: 12px;
+    bottom: 82px;
+  }
+
+  .timeora-chat-window {
+    position: fixed;
+    right: 8px;
+    bottom: 140px;
+    width: calc(100vw - 16px);
+    height: min(620px, calc(100dvh - 160px));
+    min-height: 340px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeora-chatbot *,
+  .timeora-chatbot *::before,
+  .timeora-chatbot *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
