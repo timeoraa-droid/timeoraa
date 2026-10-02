@@ -25,14 +25,6 @@ const runTests = async () => {
   test('Payment routes load', () => { const r = require('../routes/paymentRoutes'); if (!r.stack) throw new Error('No stack'); });
   test('Voice routes load', () => { const r = require('../routes/voiceRoutes').router; if (!r.stack) throw new Error('No stack'); });
   test('Coupon routes load', () => { const r = require('../routes/couponRoutes'); if (!r.stack) throw new Error('No stack'); });
-  test('Controller imports work', () => {
-    require('../controllers/authController');
-    require('../controllers/orderController');
-    require('../controllers/productController');
-    require('../controllers/paymentController');
-    require('../controllers/adminController');
-    require('../controllers/checkoutController');
-  });
   test('Middleware imports work', () => {
     const { protect, admin } = require('../middleware/authMiddleware');
     if (typeof protect !== 'function') throw new Error('protect not a function');

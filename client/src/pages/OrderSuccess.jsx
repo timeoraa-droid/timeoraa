@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { CheckCircle2, Package, ArrowRight, ShieldCheck, Download, Clock } from 'lucide-react';
+import React from 'react';
+import { useLocation, Link } from 'react-router-dom';
+import { CheckCircle2, Package, Download } from 'lucide-react';
 import { BRAND_CONFIG } from '../config/brandConfig';
 
 const OrderSuccess = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const order = location.state?.order || {
-    orderId: 'TM-ORD-' + Math.floor(100000 + Math.random() * 900000),
-    createdAt: new Date().toISOString(), total: 0, items: [], shippingInfo: {},
-  };
+  const order = location.state?.order;
   const { paymentPending, razorpayData } = location.state || {};
-  const [downloadedInvoice, setDownloadedInvoice] = useState(false);
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-[#0b0b0d] pt-32 pb-24 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4 text-center">
+          <h1 className="text-2xl font-bold text-white">Order details unavailable</h1>
+          <p className="text-sm text-gray-400 mt-3">We could not verify an order for this page.</p>
+          <Link to="/orders" className="inline-block mt-6 px-6 py-3 bg-[#2dd4bf] text-black font-semibold text-xs uppercase rounded-lg">
+            View My Orders
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleDownloadInvoice = () => {
     try {
@@ -35,7 +44,6 @@ const OrderSuccess = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setDownloadedInvoice(true);
     } catch {
       alert('Invoice download failed');
     }

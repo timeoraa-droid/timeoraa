@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Watch, Award, Clock, Compass, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Clock, Compass, ShieldCheck, ArrowRight } from 'lucide-react';
 import { BRAND_CONFIG } from '../config/brandConfig';
 
 const About = () => {

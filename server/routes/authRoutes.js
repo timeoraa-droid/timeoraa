@@ -9,13 +9,26 @@ const { protect, admin } = require('../middleware/authMiddleware');
 const { logError } = require('../utils/logger');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'timeora_super_secret_jwt_horology_key_2024', {
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured');
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '30d',
   });
 };
 
+const requireJwtSecret = (res) => {
+  if (process.env.JWT_SECRET) return false;
+  return res.status(503).json({
+    success: false,
+    message: 'Authentication is temporarily unavailable. Please try again later.',
+  });
+};
+
+const isDatabaseError = (error) => mongoose.connection.readyState !== 1
+  || ['MongooseError', 'MongoNetworkError', 'MongoServerSelectionError', 'MongoNotConnectedError'].includes(error.name);
+
 router.post('/register', async (req, res) => {
   try {
+    if (requireJwtSecret(res)) return;
     const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
     const name = typeof body.name === 'string' ? body.name.trim()
       : typeof body.fullName === 'string' ? body.fullName.trim() : '';
@@ -72,14 +85,17 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const cleanEmail = (email || '').toLowerCase().trim();
+    if (requireJwtSecret(res)) return;
+    const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+    const email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : '';
+    const { password } = body;
 
-    if (!cleanEmail || !password) {
+    if (!email || !/^\S+@\S+\.\S+$/.test(email) || email.length > 254
+      || typeof password !== 'string' || password.length < 1 || password.length > 128) {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    const user = await User.findOne({ email: cleanEmail }).select('+password');
+    const user = await User.findOne({ email }).select('+password');
 
     if (user && await user.matchPassword(password)) {
       if (!user.isActive) {
@@ -89,22 +105,27 @@ router.post('/login', async (req, res) => {
       await user.save();
 
       const token = generateToken(user._id);
-      res.json({
+      return res.json({
         success: true,
         user: { id: user._id, name: user.name, email: user.email, role: user.role, membershipTier: user.membershipTier, isVerified: user.isVerified },
         token,
       });
     } else {
-      res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ success: false, message: 'Server error', details: error.message, stack: error.stack });
+    if (isDatabaseError(error)) {
+      logError('Login database operation failed', { errorName: error.name, errorCode: error.code });
+      return res.status(503).json({ success: false, message: 'Sign-in is temporarily unavailable. Please try again later.' });
+    }
+    logError('Login failed', { errorName: error.name, errorCode: error.code });
+    return res.status(500).json({ success: false, message: 'Unable to sign in right now. Please try again later.' });
   }
 });
 
 router.post('/admin/login', async (req, res) => {
   try {
+    if (requireJwtSecret(res)) return;
     const { email, loginId, password } = req.body;
     const cleanLoginId = (loginId || email || '').toLowerCase().trim();
 

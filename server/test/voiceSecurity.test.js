@@ -62,6 +62,8 @@ test('Twilio media WebSocket upgrade requires a valid provider signature', () =>
 });
 
 test('voice admin endpoints reject requests without authentication', async () => {
+  const previousJwtSecret = process.env.JWT_SECRET;
+  process.env.JWT_SECRET = 'test-secret-key-min-32-chars';
   const app = express();
   app.use(express.json());
   app.use('/api/voice', router);
@@ -70,25 +72,31 @@ test('voice admin endpoints reject requests without authentication', async () =>
     const response = await fetch(`http://127.0.0.1:${server.address().port}/api/voice/admin/calls`);
     assert.equal(response.status, 401);
   } finally {
+    if (previousJwtSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = previousJwtSecret;
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   }
 });
 
 test('voice admin endpoints reject an authenticated regular customer', async () => {
   const originalFindById = User.findById;
+  const previousJwtSecret = process.env.JWT_SECRET;
+  process.env.JWT_SECRET = 'test-secret-key-min-32-chars';
   User.findById = () => ({ select: async () => ({ _id: '507f1f77bcf86cd799439011', role: 'user' }) });
   const app = express();
   app.use(express.json());
   app.use('/api/voice', router);
   const server = app.listen(0);
   try {
-    const token = jwt.sign({ id: '507f1f77bcf86cd799439011' }, process.env.JWT_SECRET || 'timeora_super_secret_jwt_horology_key_2024');
+    const token = jwt.sign({ id: '507f1f77bcf86cd799439011' }, process.env.JWT_SECRET);
     const response = await fetch(`http://127.0.0.1:${server.address().port}/api/voice/admin/calls`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     assert.equal(response.status, 403);
   } finally {
     User.findById = originalFindById;
+    if (previousJwtSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = previousJwtSecret;
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   }
 });

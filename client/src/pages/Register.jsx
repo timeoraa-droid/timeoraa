@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, Mail, User, Watch, ArrowRight, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { BRAND_CONFIG } from '../config/brandConfig';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -37,7 +36,7 @@ const Register = () => {
       } else {
         setError(res.message || 'Unable to register account.');
       }
-    } catch (err) {
+    } catch {
       setError('Registration failed.');
     } finally {
       setIsLoading(false);

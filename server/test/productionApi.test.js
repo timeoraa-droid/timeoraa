@@ -181,6 +181,137 @@ test('duplicate registration returns 409', async () => {
   }
 });
 
+test('login rejects malformed credentials before querying MongoDB', async () => {
+  const originalFindOne = User.findOne;
+  User.findOne = () => { throw new Error('Login validation queried MongoDB'); };
+  const app = express();
+  app.use(express.json());
+  app.use('/api/auth', authRoutes);
+  try {
+    await withServer(app, async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: { invalid: true }, password: 123 }),
+      });
+      assert.equal(response.status, 400);
+    });
+  } finally {
+    User.findOne = originalFindOne;
+  }
+});
+
+test('login authenticates a valid customer and does not return its password hash', async () => {
+  const originalFindOne = User.findOne;
+  const previousJwtSecret = process.env.JWT_SECRET;
+  const previousJwtExpire = process.env.JWT_EXPIRE;
+  process.env.JWT_SECRET = 'test-login-secret-that-is-at-least-32-characters';
+  process.env.JWT_EXPIRE = '30d';
+  const user = {
+    _id: '507f1f77bcf86cd799439011',
+    name: 'Taylor Customer',
+    email: 'taylor@example.com',
+    role: 'user',
+    membershipTier: 'TIMEORA Royal Patron',
+    isVerified: true,
+    isActive: true,
+    password: '$2a$12$private-hash',
+    matchPassword: async (password) => password === 'secure123',
+    save: async () => {},
+  };
+  User.findOne = () => ({ select: async (fields) => {
+    assert.equal(fields, '+password');
+    return user;
+  } });
+  const app = express();
+  app.use(express.json());
+  app.use('/api/auth', authRoutes);
+  try {
+    await withServer(app, async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: ' Taylor@Example.com ', password: 'secure123' }),
+      });
+      const body = await response.json();
+      assert.equal(response.status, 200);
+      assert.equal(body.user.email, user.email);
+      assert.equal(typeof body.token, 'string');
+      assert.equal(JSON.stringify(body).includes(user.password), false);
+    });
+  } finally {
+    User.findOne = originalFindOne;
+    if (previousJwtSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = previousJwtSecret;
+    if (previousJwtExpire === undefined) delete process.env.JWT_EXPIRE;
+    else process.env.JWT_EXPIRE = previousJwtExpire;
+  }
+});
+
+test('login reports database outages as 503 without exposing internal errors', async () => {
+  const originalFindOne = User.findOne;
+  User.findOne = () => ({
+    select: async () => {
+      const error = new Error('private database connection details');
+      error.name = 'MongoServerSelectionError';
+      throw error;
+    },
+  });
+  const app = express();
+  app.use(express.json());
+  app.use('/api/auth', authRoutes);
+  try {
+    await withServer(app, async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'taylor@example.com', password: 'secure123' }),
+      });
+      const body = await response.json();
+      assert.equal(response.status, 503);
+      assert.match(body.message, /temporarily unavailable/i);
+      assert.equal(JSON.stringify(body).includes('private database'), false);
+      assert.equal('stack' in body, false);
+    });
+  } finally {
+    User.findOne = originalFindOne;
+  }
+});
+
+test('registration and login refuse to use a fallback JWT secret', async () => {
+  const previousJwtSecret = process.env.JWT_SECRET;
+  delete process.env.JWT_SECRET;
+  const app = express();
+  app.use(express.json());
+  app.use('/api/auth', authRoutes);
+  try {
+    await withServer(app, async (baseUrl) => {
+      const registration = await fetch(`${baseUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Taylor Customer',
+          email: 'taylor@example.com',
+          password: 'secure123',
+          confirmPassword: 'secure123',
+        }),
+      });
+      const login = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'taylor@example.com', password: 'secure123' }),
+      });
+      assert.equal(registration.status, 503);
+      assert.equal(login.status, 503);
+      assert.equal((await registration.text()).includes('JWT_SECRET'), false);
+      assert.equal((await login.text()).includes('JWT_SECRET'), false);
+    });
+  } finally {
+    if (previousJwtSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = previousJwtSecret;
+  }
+});
+
 test('unavailable product database returns 503 rather than a successful empty catalog', async () => {
   const app = express();
   app.use('/api/products', productRoutes);

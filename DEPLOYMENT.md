@@ -21,11 +21,11 @@ To run separately, use `npm run server` and `npm run client` in two terminals, b
 
 Set the Vercel project root to `watch-store` and deploy `main`. The repository's `vercel.json` builds `client/` and rewrites `/api/*` to `api/index.js`. That entry exports the Express request handler and connects MongoDB before API requests. Set `MONGODB_URI` (or `MONGO_URI`) to the Atlas connection string and allow network access from the deployment environment. The API returns HTTP 503 when MongoDB is not configured or cannot be reached; it does not report an empty/fake catalog.
 
-Configure these server-side Vercel environment variables for standard HTTP features: `MONGODB_URI`, a strong `JWT_SECRET`, `CLIENT_URL` set to the deployed site origin, and any payment/email settings the store uses. `VITE_API_URL` may be left unset to use same-origin `/api`; set it to an HTTPS API origin only when the backend is hosted separately. Vite variables are public; never put secrets in a `VITE_` variable.
+Use Node.js `22.x` in Vercel Project Settings (also declared in the root `package.json`; Mongoose 9 and MongoDB driver 7 require Node `>=20.19.0`). Configure these server-side Vercel environment variables for standard HTTP features: `MONGODB_URI`, a strong `JWT_SECRET`, `CLIENT_URL` set to the deployed site origin, and any payment/email settings the store uses. `JWT_SECRET` is mandatory; authentication returns 503 rather than signing tokens with a public fallback secret when it is missing. `VITE_API_URL` may be left unset to use same-origin `/api`; set it to an HTTPS API origin only when the backend is hosted separately. Vite variables are public; never put secrets in a `VITE_` variable.
 
 The Vercel HTTP function exports the Express app. Run `server/server.js` on a persistent Node host for voice/media WebSocket upgrades; point `VOICE_STREAM_BASE_URL` at that host. The website can continue using the Vercel HTTP API for standard requests. The app does not claim voice readiness just because the Vercel site is deployed.
 
-Vercel's filesystem is not durable for product uploads. Product records can store externally hosted image URLs. Use durable object storage before relying on local upload files in production.
+Vercel's filesystem is not durable for product uploads. The current admin upload endpoint writes to the server's local `uploads/` directory, so uploaded images may disappear between function invocations/deployments. Product records can store externally hosted image URLs; configure durable object storage and update the upload endpoint before relying on admin file uploads in production.
 
 ## AI Voice Provider Setup
 

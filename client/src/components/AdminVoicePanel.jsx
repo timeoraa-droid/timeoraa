@@ -22,10 +22,10 @@ const AdminVoicePanel = () => {
     const headers = { Authorization: `Bearer ${token}` };
     try {
       const [callResult, orderResult, configResult, publicConfig] = await Promise.all([
-        axios.get(`${API_BASE}/api/voice/admin/calls`, { headers }),
-        axios.get(`${API_BASE}/api/voice/admin/orders`, { headers }),
-        axios.get(`${API_BASE}/api/voice/admin/config`, { headers }),
-        axios.get(`${API_BASE}/api/voice/config`),
+        axios.get(`${API_BASE}/voice/admin/calls`, { headers }),
+        axios.get(`${API_BASE}/voice/admin/orders`, { headers }),
+        axios.get(`${API_BASE}/voice/admin/config`, { headers }),
+        axios.get(`${API_BASE}/voice/config`),
       ]);
       setCalls(callResult.data.calls || []);
       setOrders(orderResult.data.orders || []);
@@ -45,10 +45,10 @@ const AdminVoicePanel = () => {
     const headers = { Authorization: `Bearer ${token}` };
 
     Promise.all([
-      axios.get(`${API_BASE}/api/voice/admin/calls`, { headers }),
-      axios.get(`${API_BASE}/api/voice/admin/orders`, { headers }),
-      axios.get(`${API_BASE}/api/voice/admin/config`, { headers }),
-      axios.get(`${API_BASE}/api/voice/config`),
+      axios.get(`${API_BASE}/voice/admin/calls`, { headers }),
+      axios.get(`${API_BASE}/voice/admin/orders`, { headers }),
+      axios.get(`${API_BASE}/voice/admin/config`, { headers }),
+      axios.get(`${API_BASE}/voice/config`),
     ]).then(([callResult, orderResult, configResult, publicConfig]) => {
       if (!mounted) return;
       setCalls(callResult.data.calls || []);
@@ -70,7 +70,7 @@ const AdminVoicePanel = () => {
     setNotice('');
     try {
       const token = localStorage.getItem('timeora_token');
-      await axios.put(`${API_BASE}/api/voice/admin/config`, config, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${API_BASE}/voice/admin/config`, config, { headers: { Authorization: `Bearer ${token}` } });
       setNotice('Voice assistant settings saved.');
     } catch (error) {
       setNotice(error.response?.data?.message || 'Settings could not be saved.');

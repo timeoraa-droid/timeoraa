@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ArrowRight, ShoppingBag, ShieldCheck, Truck, ArrowLeft, Tag, Check } from 'lucide-react';
+import { Trash2, ArrowRight, ShoppingBag, ShieldCheck, ArrowLeft, Tag, Check } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { BRAND_CONFIG } from '../config/brandConfig';
 

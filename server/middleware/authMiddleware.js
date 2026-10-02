@@ -5,9 +5,12 @@ const protect = async (req, res, next) => {
   let token;
 
   try {
+    if (!process.env.JWT_SECRET) {
+      return res.status(503).json({ success: false, message: 'Authentication is temporarily unavailable. Please try again later.' });
+    }
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'timeora_super_secret_jwt_horology_key_2024');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await User.findById(decoded.id).select('-password');
       if (!user) {
         return res.status(401).json({ success: false, message: 'User not found' });

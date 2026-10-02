@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { 
   Star, 
   Heart, 
@@ -7,16 +7,11 @@ import {
   ShieldCheck, 
   Truck, 
   RefreshCw, 
-  Gauge, 
-  Droplets, 
-  Award, 
   Check, 
   ChevronRight, 
   MessageSquare,
   Share2,
   Play,
-  Film,
-  Video,
   Watch
 } from 'lucide-react';
 import { BRAND_CONFIG } from '../config/brandConfig';
@@ -28,7 +23,6 @@ import CatalogNotice from '../components/CatalogNotice';
 
 const ProductDetails = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { products, loading, error, refreshProducts } = useProducts();

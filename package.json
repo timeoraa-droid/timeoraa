@@ -2,6 +2,9 @@
   "name": "watch-store",
   "version": "1.0.0",
   "description": "TIMEORA - Luxury Handcrafted Watch E-Commerce Platform",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "client": "npm run dev --prefix client",
     "server": "node server/server.js",

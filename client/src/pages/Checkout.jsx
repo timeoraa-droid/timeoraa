@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldCheck, Lock, CreditCard, Landmark, Truck, Check, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { BRAND_CONFIG } from '../config/brandConfig';
@@ -10,7 +10,7 @@ import axios from 'axios';
 const API_URL = API_BASE;
 
 const Checkout = () => {
-  const { cartItems, subtotal, clearCart, lastCheckoutOrder, setLastCheckoutOrder } = useCart();
+  const { cartItems, subtotal, clearCart, setLastCheckoutOrder } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -23,9 +23,9 @@ const Checkout = () => {
     orderNotes: '',
   });
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
-  const [shippingMethod, setShippingMethod] = useState('express');
-  const [couponCode, setCouponCode] = useState('');
-  const [couponApplied, setCouponApplied] = useState(null);
+  const shippingMethod = 'express';
+  const couponCode = '';
+  const couponApplied = null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

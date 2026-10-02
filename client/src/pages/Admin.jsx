@@ -8,17 +8,9 @@ import {
   PackageX, 
   PackageCheck, 
   Search, 
-  Check, 
   X, 
   AlertCircle, 
-  ShieldCheck, 
   Mail, 
-  DollarSign, 
-  Eye, 
-  ArrowUpRight,
-  Sparkles,
-  Percent,
-  Sliders,
   Upload,
   RefreshCw,
   Video,
@@ -50,7 +42,6 @@ const Admin = () => {
     updateProduct, 
     deleteProduct, 
     markOutOfStock, 
-    markAvailable, 
     setProductOffer, 
     removeProductOffer,
   } = useProducts();
@@ -198,7 +189,7 @@ const Admin = () => {
       if (res.data?.success && res.data?.filePath) {
         newUrl = res.data.filePath;
       }
-    } catch (e) {
+    } catch {
       // Fallback
     }
 

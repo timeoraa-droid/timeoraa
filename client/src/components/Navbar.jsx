@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   ShoppingBag, 
   Heart, 
@@ -20,8 +20,6 @@ const Navbar = ({ onOpenSearch }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-
   const { totalItemsCount, setIsCartOpen } = useCart();
   const { wishlist } = useWishlist();
   const { user, isAuthenticated, isAdmin } = useAuth();

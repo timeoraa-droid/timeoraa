@@ -2,11 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
-  Watch, 
   ShieldCheck, 
-  Award, 
   Sparkles, 
-  Compass, 
   ChevronRight, 
   Clock,
   Gem,

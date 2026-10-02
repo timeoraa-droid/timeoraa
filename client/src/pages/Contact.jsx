@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, MessageSquare, Calendar } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, Calendar } from 'lucide-react';
 import { BRAND_CONFIG } from '../config/brandConfig';
 import { API_BASE } from '../config/api';
 

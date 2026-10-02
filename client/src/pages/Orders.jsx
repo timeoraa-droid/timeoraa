@@ -1,35 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { BRAND_CONFIG } from '../config/brandConfig';
-import { Package, ArrowRight } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { API_BASE } from '../config/api';
 
 const API_URL = API_BASE;
 
 const Orders = () => {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axios.get(`${API_URL}/orders/myorders`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOrders(res.data.orders);
-    } catch (err) {
+    } catch {
       setError('Failed to load orders');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   if (loading) return <div className="min-h-screen bg-[#0b0b0d] pt-36 text-center text-gray-400">Loading orders...</div>;
   if (error) return <div className="min-h-screen bg-[#0b0b0d] pt-36 text-center"><p className="text-red-400">{error}</p><button onClick={fetchOrders} className="mt-4 text-[#2dd4bf]">Retry</button></div>;

@@ -28,7 +28,7 @@ const AdminLogin = () => {
       } else {
         setError(res.message || 'Unable to sign in. Please verify your credentials.');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during authentication.');
     } finally {
       setIsLoading(false);

@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const Account = () => {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [savedAddresses, setSavedAddresses] = useState(user?.addresses || []);
-  const [editAddress, setEditAddress] = useState(null);
 
   const handleAddAddress = () => {
     const newAddr = {

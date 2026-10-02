@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Watch, User, Shield, ArrowRight, ChevronRight } from 'lucide-react';
+import { Watch, User, Shield, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AccountTypeSelection = () => {

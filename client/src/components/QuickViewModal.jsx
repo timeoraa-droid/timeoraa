@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Star, Shield, Droplets, Gauge, ShoppingBag, Check } from 'lucide-react';
+import { X, Shield, Droplets, Gauge, ShoppingBag, Check } from 'lucide-react';
 import { BRAND_CONFIG } from '../config/brandConfig';
 import { useCart } from '../context/CartContext';
 
